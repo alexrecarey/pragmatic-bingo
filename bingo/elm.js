@@ -11360,6 +11360,49 @@ Elm.Html.Events.make = function (_elm) {
                                     ,keyCode: keyCode
                                     ,Options: Options};
 };
+Elm.StartApp = Elm.StartApp || {};
+Elm.StartApp.Simple = Elm.StartApp.Simple || {};
+Elm.StartApp.Simple.make = function (_elm) {
+   "use strict";
+   _elm.StartApp = _elm.StartApp || {};
+   _elm.StartApp.Simple = _elm.StartApp.Simple || {};
+   if (_elm.StartApp.Simple.values)
+   return _elm.StartApp.Simple.values;
+   var _U = Elm.Native.Utils.make(_elm),
+   $Basics = Elm.Basics.make(_elm),
+   $Debug = Elm.Debug.make(_elm),
+   $Html = Elm.Html.make(_elm),
+   $List = Elm.List.make(_elm),
+   $Maybe = Elm.Maybe.make(_elm),
+   $Result = Elm.Result.make(_elm),
+   $Signal = Elm.Signal.make(_elm);
+   var _op = {};
+   var start = function (config) {
+      var update = F2(function (maybeAction,model) {
+         var _p0 = maybeAction;
+         if (_p0.ctor === "Just") {
+               return A2(config.update,_p0._0,model);
+            } else {
+               return _U.crashCase("StartApp.Simple",
+               {start: {line: 91,column: 7},end: {line: 96,column: 52}},
+               _p0)("This should never happen.");
+            }
+      });
+      var actions = $Signal.mailbox($Maybe.Nothing);
+      var address = A2($Signal.forwardTo,actions.address,$Maybe.Just);
+      var model = A3($Signal.foldp,
+      update,
+      config.model,
+      actions.signal);
+      return A2($Signal.map,config.view(address),model);
+   };
+   var Config = F3(function (a,b,c) {
+      return {model: a,view: b,update: c};
+   });
+   return _elm.StartApp.Simple.values = {_op: _op
+                                        ,Config: Config
+                                        ,start: start};
+};
 Elm.Bingo = Elm.Bingo || {};
 Elm.Bingo.make = function (_elm) {
    "use strict";
@@ -11370,12 +11413,29 @@ Elm.Bingo.make = function (_elm) {
    $Debug = Elm.Debug.make(_elm),
    $Html = Elm.Html.make(_elm),
    $Html$Attributes = Elm.Html.Attributes.make(_elm),
+   $Html$Events = Elm.Html.Events.make(_elm),
    $List = Elm.List.make(_elm),
    $Maybe = Elm.Maybe.make(_elm),
    $Result = Elm.Result.make(_elm),
    $Signal = Elm.Signal.make(_elm),
+   $StartApp$Simple = Elm.StartApp.Simple.make(_elm),
    $String = Elm.String.make(_elm);
    var _op = {};
+   var entryItem = function (entry) {
+      return A2($Html.li,
+      _U.list([]),
+      _U.list([A2($Html.span,
+              _U.list([$Html$Attributes.$class("phrase")]),
+              _U.list([$Html.text(entry.phrase)]))
+              ,A2($Html.span,
+              _U.list([$Html$Attributes.$class("points")]),
+              _U.list([$Html.text($Basics.toString(entry.points))]))]));
+   };
+   var entryList = function (entries) {
+      return A2($Html.ul,
+      _U.list([]),
+      A2($List.map,entryItem,entries));
+   };
    var pageFooter = A2($Html.footer,
    _U.list([]),
    _U.list([A2($Html.a,
@@ -11389,14 +11449,59 @@ Elm.Bingo.make = function (_elm) {
    var pageHeader = A2($Html.h1,
    _U.list([]),
    _U.list([A2(title,"bingo!",3)]));
-   var view = A2($Html.div,
-   _U.list([$Html$Attributes.id("container")]),
-   _U.list([pageHeader,pageFooter]));
-   var main = view;
+   var update = F2(function (action,model) {
+      var _p0 = action;
+      if (_p0.ctor === "NoOp") {
+            return model;
+         } else {
+            return _U.update(model,
+            {entries: A2($List.sortBy,
+            function (_) {
+               return _.points;
+            },
+            model.entries)});
+         }
+   });
+   var Sort = {ctor: "Sort"};
+   var view = F2(function (address,model) {
+      return A2($Html.div,
+      _U.list([$Html$Attributes.id("container")]),
+      _U.list([pageHeader
+              ,entryList(model.entries)
+              ,A2($Html.button,
+              _U.list([$Html$Attributes.$class("sort")
+                      ,A2($Html$Events.onClick,address,Sort)]),
+              _U.list([$Html.text("Sort")]))
+              ,pageFooter]));
+   });
+   var NoOp = {ctor: "NoOp"};
+   var newEntry = F3(function (phrase,points,id) {
+      return {phrase: phrase
+             ,points: points
+             ,wasSpoken: false
+             ,id: id};
+   });
+   var initialModel = {entries: _U.list([A3(newEntry,
+                                        "Doing Agile the hard way",
+                                        200,
+                                        2)
+                                        ,A3(newEntry,"Future Proof",100,1)
+                                        ,A3(newEntry,"In the cloud",300,3)
+                                        ,A3(newEntry,"Iterate",150,4)])};
+   var main = $StartApp$Simple.start({model: initialModel
+                                     ,view: view
+                                     ,update: update});
    return _elm.Bingo.values = {_op: _op
+                              ,newEntry: newEntry
+                              ,initialModel: initialModel
+                              ,NoOp: NoOp
+                              ,Sort: Sort
+                              ,update: update
                               ,title: title
                               ,pageHeader: pageHeader
                               ,pageFooter: pageFooter
+                              ,entryItem: entryItem
+                              ,entryList: entryList
                               ,view: view
                               ,main: main};
 };
