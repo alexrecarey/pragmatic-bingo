@@ -44,6 +44,7 @@ type Action
     | Sort 
     | Delete Int
     | Mark Int
+--    | Add String Int
 
 update: Action -> Model -> Model 
 update action model =
@@ -69,6 +70,9 @@ update action model =
           else e
       in
         {model | entries = List.map updateEntries model.entries}
+
+--    Add phrase points ->
+--      model
 
 -- VIEW
 title: String -> Int -> Html
@@ -125,6 +129,15 @@ totalItem total =
     , span [ class "points"] [ text (toString total)]
     ]
 
+{-
+addNewEntry address =
+  Html.form [ id "newEntry"]
+  [ input [ name "phrase" ] [  ]
+  , input [ name "points" ] [  ]
+  , button [ onClick address (Add "te" 2) ] [ text "Add" ]
+  ]
+-}
+
 entryList: Signal.Address Action -> List Entry -> Html
 entryList address entries = 
   let
@@ -137,6 +150,7 @@ view: Signal.Address Action -> Model -> Html
 view address model = 
   div [ id "container" ]
     [ pageHeader
+--    , addNewEntry address
     , entryList address model.entries
     , button 
       [ class "sort", onClick address Sort]
