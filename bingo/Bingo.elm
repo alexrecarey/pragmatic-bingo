@@ -30,60 +30,106 @@ initialModel =
 type Action 
     = NoOp 
     | Sort 
+    | Delete Int
+    | Mark Int
 
 
 update action model =
-    case action of
-        NoOp ->
-            model
+  case action of
+    NoOp ->
+      model
 
-        Sort ->
-            { model | entries = List.sortBy .points model.entries}
+    Sort ->
+      { model | entries = List.sortBy .points model.entries}
 
+    Delete id ->
+      let
+        remainingEntries = 
+          List.filter (\e -> e.id /= id)
+      in
+        { model | entries = remainingEntries model.entries }
+
+    Mark id ->
+      let
+        updateEntries e = 
+          if e.id == id 
+          then {e | wasSpoken = (not e.wasSpoken)} 
+          else e
+      in
+        {model | entries = List.map updateEntries model.entries}
 
 -- VIEW
 title message times = 
-    message ++ " "
-        |> toUpper 
-        |> repeat times
-        |> trimRight
-        |> text
+  message ++ " "
+    |> toUpper 
+    |> repeat times
+    |> trimRight
+    |> text
 
 
 pageHeader = 
-    h1 [ ] [title "bingo!" 3]
+  h1 [ ] [title "bingo!" 3]
 
 pageFooter = 
-    footer [ ]
-        [ a  [ href "https://pragmaticstudio.com"] 
-             [ text "The Pragmatic Studio"] 
-        ]
+  footer [ ]
+    [ a  [ href "https://pragmaticstudio.com"] 
+      [ text "The Pragmatic Studio"] 
+    ]
  
 
 
-entryItem entry = 
-
-    li [] 
+entryItem address entry = 
+  li 
+    [ classList [("highlight", entry.wasSpoken)]
+    , onClick address (Mark entry.id)
+    ] 
     [ span [class "phrase"] [text entry.phrase]
-    , span [class "points"] [text (toString entry.points)]]
+    , span [class "points"] [text (toString entry.points)]
+    , button
+      [ class "delete", onClick address (Delete entry.id)]
+      [ ]
+    ]
+
+totalPoints entries = 
+  entries
+    |> List.filter .wasSpoken
+    |> List.foldl (\e x -> e.points + x) 0
 
 
-entryList entries = 
-    ul [ ] (List.map entryItem entries)  
+{-
+  let
+    spokenEntries = List.filter .wasSpoken entries
+  in
+    List.sum (List.map .points spokenEntries)
+-}
+
+totalItem total = 
+  li
+    [ class "total" ]
+    [ span [ class "label"] [ text "Total"]
+    , span [ class "points"] [ text (toString total)]
+    ]
+
+entryList address entries = 
+  let
+    entryItems = List.map (entryItem address) entries
+    items = entryItems ++ [ totalItem (totalPoints entries)]
+  in
+    ul [ ] items
 
 view address model = 
-    div [ id "container" ]
-        [ pageHeader
-          , entryList model.entries
-          , button 
-            [ class "sort", onClick address Sort]
-            [ text "Sort"]
-          , pageFooter]
+  div [ id "container" ]
+    [ pageHeader
+    , entryList address model.entries
+    , button 
+      [ class "sort", onClick address Sort]
+      [ text "Sort"]
+    , pageFooter]
 
 
 -- Wire it together
 main = 
-    StartApp.start
+  StartApp.start
     { model = initialModel
     , view = view
     , update = update

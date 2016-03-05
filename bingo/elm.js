@@ -11421,21 +11421,6 @@ Elm.Bingo.make = function (_elm) {
    $StartApp$Simple = Elm.StartApp.Simple.make(_elm),
    $String = Elm.String.make(_elm);
    var _op = {};
-   var entryItem = function (entry) {
-      return A2($Html.li,
-      _U.list([]),
-      _U.list([A2($Html.span,
-              _U.list([$Html$Attributes.$class("phrase")]),
-              _U.list([$Html.text(entry.phrase)]))
-              ,A2($Html.span,
-              _U.list([$Html$Attributes.$class("points")]),
-              _U.list([$Html.text($Basics.toString(entry.points))]))]));
-   };
-   var entryList = function (entries) {
-      return A2($Html.ul,
-      _U.list([]),
-      A2($List.map,entryItem,entries));
-   };
    var pageFooter = A2($Html.footer,
    _U.list([]),
    _U.list([A2($Html.a,
@@ -11451,23 +11436,56 @@ Elm.Bingo.make = function (_elm) {
    _U.list([A2(title,"bingo!",3)]));
    var update = F2(function (action,model) {
       var _p0 = action;
-      if (_p0.ctor === "NoOp") {
-            return model;
-         } else {
-            return _U.update(model,
-            {entries: A2($List.sortBy,
-            function (_) {
-               return _.points;
-            },
-            model.entries)});
-         }
+      switch (_p0.ctor)
+      {case "NoOp": return model;
+         case "Sort": return _U.update(model,
+           {entries: A2($List.sortBy,
+           function (_) {
+              return _.points;
+           },
+           model.entries)});
+         case "Delete":
+         var remainingEntries = $List.filter(function (e) {
+              return !_U.eq(e.id,_p0._0);
+           });
+           return _U.update(model,
+           {entries: remainingEntries(model.entries)});
+         default: var updateEntries = function (e) {
+              return _U.eq(e.id,_p0._0) ? _U.update(e,
+              {wasSpoken: $Basics.not(e.wasSpoken)}) : e;
+           };
+           return _U.update(model,
+           {entries: A2($List.map,updateEntries,model.entries)});}
+   });
+   var Mark = function (a) {    return {ctor: "Mark",_0: a};};
+   var Delete = function (a) {    return {ctor: "Delete",_0: a};};
+   var entryItem = F2(function (address,entry) {
+      return A2($Html.li,
+      _U.list([$Html$Attributes.classList(_U.list([{ctor: "_Tuple2"
+                                                   ,_0: "highlight"
+                                                   ,_1: entry.wasSpoken}]))
+              ,A2($Html$Events.onClick,address,Mark(entry.id))]),
+      _U.list([A2($Html.span,
+              _U.list([$Html$Attributes.$class("phrase")]),
+              _U.list([$Html.text(entry.phrase)]))
+              ,A2($Html.span,
+              _U.list([$Html$Attributes.$class("points")]),
+              _U.list([$Html.text($Basics.toString(entry.points))]))
+              ,A2($Html.button,
+              _U.list([$Html$Attributes.$class("delete")
+                      ,A2($Html$Events.onClick,address,Delete(entry.id))]),
+              _U.list([]))]));
+   });
+   var entryList = F2(function (address,entries) {
+      var entryItems = A2($List.map,entryItem(address),entries);
+      return A2($Html.ul,_U.list([]),entryItems);
    });
    var Sort = {ctor: "Sort"};
    var view = F2(function (address,model) {
       return A2($Html.div,
       _U.list([$Html$Attributes.id("container")]),
       _U.list([pageHeader
-              ,entryList(model.entries)
+              ,A2(entryList,address,model.entries)
               ,A2($Html.button,
               _U.list([$Html$Attributes.$class("sort")
                       ,A2($Html$Events.onClick,address,Sort)]),
@@ -11496,6 +11514,8 @@ Elm.Bingo.make = function (_elm) {
                               ,initialModel: initialModel
                               ,NoOp: NoOp
                               ,Sort: Sort
+                              ,Delete: Delete
+                              ,Mark: Mark
                               ,update: update
                               ,title: title
                               ,pageHeader: pageHeader
