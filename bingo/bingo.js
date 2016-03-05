@@ -11532,7 +11532,13 @@ Elm.Bingo.make = function (_elm) {
    var main = $StartApp$Simple.start({model: initialModel
                                      ,view: view
                                      ,update: update});
+   var Model = function (a) {    return {entries: a};};
+   var Entry = F4(function (a,b,c,d) {
+      return {phrase: a,points: b,wasSpoken: c,id: d};
+   });
    return _elm.Bingo.values = {_op: _op
+                              ,Entry: Entry
+                              ,Model: Model
                               ,newEntry: newEntry
                               ,initialModel: initialModel
                               ,NoOp: NoOp
