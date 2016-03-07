@@ -3,8 +3,10 @@ module Bingo where
 import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
-
+import Maybe exposing (..)
+import Signal exposing (Address)
 import String exposing (toUpper, repeat, trimRight)
+import BingoUtils as Utils
 
 import StartApp.Simple as StartApp
 
@@ -17,7 +19,11 @@ type alias Entry =
   }
 
 type alias Model =
-  { entries: List Entry}
+  { entries: List Entry
+  , phraseInput: String
+  , pointsInput: String
+  , nextID: Int
+  }
 
 
 newEntry: String -> Int -> Int -> Entry
@@ -33,9 +39,13 @@ initialModel =
     { entries  = 
         [ newEntry "Doing Agile the hard way" 200 2
         , newEntry "Future Proof" 100 1
-        , newEntry "In the cloud" 300 3
+        , newEntry "Cloud" 300 3
         , newEntry "Iterate" 150 4
+        , newEntry "Reactive" 250 5
         ] 
+    , phraseInput = ""
+    , pointsInput = ""
+    , nextID = 5
     }
 
 -- UPDATE
@@ -44,7 +54,10 @@ type Action
     | Sort 
     | Delete Int
     | Mark Int
---    | Add String Int
+    | Add String Int
+    | UpdatePhraseInput String
+    | UpdatePointsInput String
+
 
 update: Action -> Model -> Model 
 update action model =
@@ -71,8 +84,19 @@ update action model =
       in
         {model | entries = List.map updateEntries model.entries}
 
---    Add phrase points ->
---      model
+    UpdatePhraseInput content ->
+      { model | phraseInput = content }
+
+    UpdatePointsInput content ->
+      { model | pointsInput = content }
+
+    Add phrase points ->
+      let
+        maxID = withDefault 1 (List.maximum (List.map .id model.entries))
+        e = newEntry phrase points (maxID + 1)
+      in
+        { model | entries = e :: model.entries }
+
 
 -- VIEW
 title: String -> Int -> Html
@@ -115,12 +139,7 @@ totalPoints entries =
     |> List.foldl (\e x -> e.points + x) 0
 
 
-{-
-  let
-    spokenEntries = List.filter .wasSpoken entries
-  in
-    List.sum (List.map .points spokenEntries)
--}
+
 totalItem: Int -> Html
 totalItem total = 
   li
@@ -129,14 +148,14 @@ totalItem total =
     , span [ class "points"] [ text (toString total)]
     ]
 
-{-
+
 addNewEntry address =
   Html.form [ id "newEntry"]
   [ input [ name "phrase" ] [  ]
   , input [ name "points" ] [  ]
   , button [ onClick address (Add "te" 2) ] [ text "Add" ]
   ]
--}
+
 
 entryList: Signal.Address Action -> List Entry -> Html
 entryList address entries = 
@@ -146,11 +165,39 @@ entryList address entries =
   in
     ul [ ] items
 
+
+entryForm : Address Action -> Model -> Html
+entryForm address model =
+  div [ ]
+    [ input
+      [ type' "text"
+      , placeholder "Phrase"
+      , value model.phraseInput
+      , autofocus True
+      , Utils.onInput address UpdatePhraseInput
+      ]
+      [ ]
+    , input
+      [ type' "number"
+      , placeholder "Points"
+      , value model.pointsInput
+      , name "points"
+      , Utils.onInput address UpdatePointsInput
+      ]
+      [ ]
+    , button
+      [ class "add" ] [ text "Add" ]
+    , h2 
+      [ ]
+      [ text (model.phraseInput ++ " " ++ model.pointsInput) ]
+    ]
+
+
 view: Signal.Address Action -> Model -> Html
 view address model = 
   div [ id "container" ]
     [ pageHeader
---    , addNewEntry address
+    , entryForm address model
     , entryList address model.entries
     , button 
       [ class "sort", onClick address Sort]
