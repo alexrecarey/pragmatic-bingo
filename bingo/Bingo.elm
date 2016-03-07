@@ -54,7 +54,7 @@ type Action
     | Sort 
     | Delete Int
     | Mark Int
-    | Add String Int
+    | Add
     | UpdatePhraseInput String
     | UpdatePointsInput String
 
@@ -90,13 +90,22 @@ update action model =
     UpdatePointsInput content ->
       { model | pointsInput = content }
 
-    Add phrase points ->
+    Add ->
       let
-        maxID = withDefault 1 (List.maximum (List.map .id model.entries))
-        e = newEntry phrase points (maxID + 1)
+        entryToAdd = 
+          newEntry model.phraseInput (Utils.parseInt model.pointsInput) model.nextID
+        isInvalid model =
+          String.isEmpty model.phraseInput || String.isEmpty model.pointsInput
       in
-        { model | entries = e :: model.entries }
-
+        if isInvalid model
+        then model
+        else
+          { model | 
+            entries = entryToAdd :: model.entries 
+          , phraseInput = ""
+          , pointsInput = ""
+          , nextID = model.nextID + 1
+          }
 
 -- VIEW
 title: String -> Int -> Html
@@ -144,17 +153,9 @@ totalItem: Int -> Html
 totalItem total = 
   li
     [ class "total" ]
-    [ span [ class "label"] [ text "Total"]
-    , span [ class "points"] [ text (toString total)]
+    [ span [ class "label" ] [ text "Total"]
+    , span [ class "points" ] [ text (toString total)]
     ]
-
-
-addNewEntry address =
-  Html.form [ id "newEntry"]
-  [ input [ name "phrase" ] [  ]
-  , input [ name "points" ] [  ]
-  , button [ onClick address (Add "te" 2) ] [ text "Add" ]
-  ]
 
 
 entryList: Signal.Address Action -> List Entry -> Html
@@ -186,7 +187,7 @@ entryForm address model =
       ]
       [ ]
     , button
-      [ class "add" ] [ text "Add" ]
+      [ class "add", onClick address Add ] [ text "Add" ]
     , h2 
       [ ]
       [ text (model.phraseInput ++ " " ++ model.pointsInput) ]
