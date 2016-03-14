@@ -5,5 +5,10 @@ import Keyboard
 import Time
 
 main =
-  show Mouse.x
-
+--  Signal.map show Mouse.x
+--  Signal.map show Mouse.position
+--  Signal.map show Window.dimensions
+--  Signal.map show Keyboard.arrows
+--  Signal.map show (Time.every Time.second)
+--  Signal.map show Keyboard.wasd
+  Signal.map show Keyboard.enter
